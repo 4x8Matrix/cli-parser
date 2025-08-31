@@ -17,10 +17,10 @@ local function injectOptions(option: Option.Option, commands: { Command.Command 
 	end
 end
 
-return function(commands: { Command.Command }, callback: (Command.CommandContext) -> ())
+return function(commands: { Command.Command }, options: { Option.Option }, callback: (Command.CommandContext) -> ())
 	local helpCommand = {
 		name = "help",
-		description = "Will render the help menu for this app.",
+		description = "Show available commands and usage information.",
 		callback = function(context)
 			callback(context)
 		end,
@@ -34,9 +34,11 @@ return function(commands: { Command.Command }, callback: (Command.CommandContext
 		name = "help",
 		aliases = { "h" },
 		type = "boolean",
-		description = "Will render the help menu for this command.",
+		description = "Show available commands and usage information.",
 	} :: Option.Option
 
 	injectOptions(helpOption, commands)
 	injectCommands(helpCommand, commands)
+
+	table.insert(options, helpOption)
 end

@@ -17,18 +17,17 @@ local function formatWithAnsi(information: Information, formats: { ansiFormat.AN
 	return updatedContent
 end
 
-local function formatSection(information: Information, title: string, items: { { name: string, description: string } })
+local function formatSection(
+	information: Information,
+	title: string,
+	items: { { name: string, description: string } },
+	longestName: number
+)
 	if not items or #items == 0 then
 		return ""
 	end
 
 	local lines = { `\n{title}` }
-	local longestName = 0
-	for _, item in items do
-		if #item.name > longestName then
-			longestName = #item.name
-		end
-	end
 
 	for _, item in items do
 		local padding = string.rep(" ", longestName - #item.name + 4)
@@ -42,6 +41,33 @@ local function formatSection(information: Information, title: string, items: { {
 	end
 
 	return table.concat(lines, "\n")
+end
+
+local function formatSections(
+	information: Information,
+	items: {
+		{
+			title: string,
+			content: { { name: string, description: string } },
+		}
+	}
+): string
+	local longestName = 0
+	local parts = {}
+
+	for _, item in items do
+		for _, content in item.content do
+			if #content.name > longestName then
+				longestName = #content.name
+			end
+		end
+	end
+
+	for _, item in items do
+		table.insert(parts, formatSection(information, item.title, item.content, longestName))
+	end
+
+	return table.concat(parts, "\n")
 end
 
 local function generateCommandHelp(information: Information, commandTree: { Command.Command })
@@ -79,10 +105,22 @@ local function generateCommandHelp(information: Information, commandTree: { Comm
 		})
 	end
 
-	for _, option in command.options do
+	for _, option in information.options do
+		local names = {}
+
+		for _, alias in option.aliases do
+			table.insert(names, `-{alias}`)
+		end
+
+		if option.valueName then
+			table.insert(names, `--{option.name}={option.valueName}`)
+		else
+			table.insert(names, `--{option.name}`)
+		end
+
 		table.insert(optionsList, {
-			description = option.description,
-			name = `{table.concat({ option.name, table.unpack(option.aliases) }, ", ")}`,
+			description = `{option.description}`,
+			name = `{table.concat(names, ", ")}`,
 		})
 	end
 
@@ -95,15 +133,20 @@ local function generateCommandHelp(information: Information, commandTree: { Comm
 
 	table.insert(
 		parts,
-		formatSection(information, formatWithAnsi(information, { "Yellow", "Underline" }, `Arguments:`), argumentsList)
-	)
-	table.insert(
-		parts,
-		formatSection(information, formatWithAnsi(information, { "Yellow", "Underline" }, `Options:`), optionsList)
-	)
-	table.insert(
-		parts,
-		formatSection(information, formatWithAnsi(information, { "Yellow", "Underline" }, `Commands:`), subcommandList)
+		formatSections(information, {
+			{
+				title = formatWithAnsi(information, { "Yellow", "Underline" }, `Arguments:`),
+				content = argumentsList,
+			},
+			{
+				title = formatWithAnsi(information, { "Yellow", "Underline" }, `Options:`),
+				content = optionsList,
+			},
+			{
+				title = formatWithAnsi(information, { "Yellow", "Underline" }, `Commands:`),
+				content = subcommandList,
+			},
+		})
 	)
 
 	print(table.concat(parts, "\n"))
@@ -127,23 +170,32 @@ local function generateGlobalHelp(information: Information)
 	end
 
 	for _, option in information.options do
+		local names = {}
+
+		for _, alias in option.aliases do
+			table.insert(names, `-{alias}`)
+		end
+
+		table.insert(names, `--{option.name}`)
+
 		table.insert(optionsList, {
 			description = `{option.description}`,
-			name = `{table.concat({ option.name, table.unpack(option.aliases) }, ", ")}`,
+			name = `{table.concat(names, ", ")}`,
 		})
 	end
 
 	table.insert(
 		parts,
-		formatSection(information, formatWithAnsi(information, { "Yellow", "Underline" }, `Commands:`), commandsList)
-	)
-	table.insert(
-		parts,
-		formatSection(
-			information,
-			formatWithAnsi(information, { "Yellow", "Underline" }, `Global Options:`),
-			optionsList
-		)
+		formatSections(information, {
+			{
+				title = formatWithAnsi(information, { "Yellow", "Underline" }, `Commands:`),
+				content = commandsList,
+			},
+			{
+				title = formatWithAnsi(information, { "Yellow", "Underline" }, `Options:`),
+				content = optionsList,
+			},
+		})
 	)
 
 	if information.homepageLink then

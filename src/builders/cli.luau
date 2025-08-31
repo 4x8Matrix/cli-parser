@@ -180,7 +180,12 @@ end
 	@method
 	@within CLI
 ]=]
-function CLI.Prototype.showHelp(self: CLI, commands: { Command.Command }, commandTree: { Command.Command }?)
+function CLI.Prototype.showHelp(
+	self: CLI,
+	commands: { Command.Command },
+	options: { Option.Option },
+	commandTree: { Command.Command }?
+)
 	renderHelpMenu({
 		name = self.name,
 		description = self.description,
@@ -196,7 +201,7 @@ function CLI.Prototype.showHelp(self: CLI, commands: { Command.Command }, comman
 
 		authors = self.authors,
 		commands = commands,
-		options = self.options,
+		options = options,
 	}, commandTree)
 end
 
@@ -204,7 +209,7 @@ end
 	@method
 	@within CLI
 ]=]
-function CLI.Prototype.showVersion(self: CLI, commands: { Command.Command })
+function CLI.Prototype.showVersion(self: CLI, commands: { Command.Command }, options: { Option.Option })
 	renderVersionMenu({
 		name = self.name,
 		description = self.description,
@@ -218,7 +223,7 @@ function CLI.Prototype.showVersion(self: CLI, commands: { Command.Command })
 
 		authors = self.authors,
 		commands = commands,
-		options = self.options,
+		options = options,
 	})
 end
 
@@ -229,20 +234,21 @@ end
 function CLI.Prototype.run(self: CLI, args: { string })
 	local mutableArgs = table.clone(args)
 	local mutableCommands = deepCopy(self.commands) :: { Command.Command }
+	local mutableOptions = deepCopy(self.options) :: { Option.Option }
 
-	injectHelpCommand(mutableCommands, function(context)
-		self:showHelp(mutableCommands, context.commandTree)
+	injectHelpCommand(mutableCommands, mutableOptions, function(context)
+		self:showHelp(mutableCommands, mutableOptions, context.commandTree)
 	end)
 
-	local globalOptions = parseOptions(self.options, mutableArgs)
+	local globalOptions = parseOptions(mutableOptions, mutableArgs)
 	local commandTree = parseCommand(mutableCommands, mutableArgs)
 	local command = commandTree[#commandTree]
 
 	if not command then
 		if globalOptions.version then
-			self:showVersion(mutableCommands)
+			self:showVersion(mutableCommands, mutableOptions)
 		elseif globalOptions.help then
-			self:showHelp(mutableCommands)
+			self:showHelp(mutableCommands, mutableOptions)
 		else
 			if self.callback then
 				if self.beforeRunCallback then
@@ -253,7 +259,7 @@ function CLI.Prototype.run(self: CLI, args: { string })
 
 				self.callback(globalOptions)
 			else
-				self:showHelp(mutableCommands)
+				self:showHelp(mutableCommands, mutableOptions)
 			end
 		end
 
@@ -276,7 +282,7 @@ function CLI.Prototype.run(self: CLI, args: { string })
 	end
 
 	if options.help then
-		self:showHelp(mutableCommands, commandTree)
+		self:showHelp(mutableCommands, mutableOptions, commandTree)
 
 		return
 	end
@@ -302,20 +308,7 @@ function CLI.Interface.new(resource: {
 
 			authors = {},
 			commands = {},
-			options = {
-				{
-					name = "version",
-					type = "boolean",
-					description = "Will render the current version of this app.",
-					aliases = { "v" },
-				},
-				{
-					name = "help",
-					type = "boolean",
-					description = "Will render the help menu for this app.",
-					aliases = { "h" },
-				},
-			},
+			options = {},
 			configuration = {
 				ansiColorEnabled = true,
 			},
