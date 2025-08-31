@@ -1,6 +1,5 @@
 name = "4x8matrix/cli_builder"
-version = "0.1.0"
-private = true
+version = "0.1.0-dev.0"
 license = "MIT"
 # repository = "https://github.com/DiscordLuau/discord-luau"
 description = "A CLI Builder for Luau"
@@ -8,7 +7,7 @@ authors = [
 	"Async Matrix <hi@asyncmatrix.dev>",
 ]
 
-includes = ["src/**/*", "pesde.toml", "LICENSE", "CONTRIBUTING.md"]
+includes = ["src/**/*", "pesde.toml", "LICENSE", "readme.md"]
 
 [target]
 environment = "luau"
