@@ -8,6 +8,8 @@ export type CLI = cli.CLI
 export type Argument = argument.Argument
 export type Option = option.Option
 
+export type CommandContext = command.CommandContext
+
 return {
 	argument = argument,
 	option = option,

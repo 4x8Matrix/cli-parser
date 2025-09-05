@@ -105,7 +105,7 @@ local function generateCommandHelp(information: Information, commandTree: { Comm
 		})
 	end
 
-	for _, option in information.options do
+	for _, option in command.options do
 		local names = {}
 
 		for _, alias in option.aliases do

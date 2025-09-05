@@ -41,7 +41,7 @@ CLI.new()
 		:setDescription("Import a new asset into the project.")
 		:setCallback(function(context)
 			print("Importing asset...")
-			print("Context:", context)
+			print("Context:", context.commandOptions)
 		end)
 		:addArgument(
 			argument
